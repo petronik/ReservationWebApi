@@ -48,7 +48,7 @@ namespace ReservationWebApi.Controllers
                 });
 
 
-            return Ok();
+            return Ok(reservation);
         }
 
         // GET api/<ReservationsController>/5
@@ -78,7 +78,7 @@ namespace ReservationWebApi.Controllers
                 return NotFound($"Order with id={id} doesn't exist.");
 
 
-            return Ok("value");
+            return Ok(reservation);
         }
 
         // POST api/<ReservationsController>
@@ -99,13 +99,34 @@ namespace ReservationWebApi.Controllers
                 _context.ReservationMenuItem.Add(rm);
             }
             _context.SaveChanges();
+
             return Ok();
         }
 
         // PUT api/<ReservationsController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public ActionResult Put(int id, ReservationCreateDto reservation)
         {
+            var reservationFromDb = _context.Reservations
+                .FirstOrDefault(r => r.R_Id == id);
+
+            if (reservationFromDb == null)
+                return NotFound();
+            _mapper.Map(reservation, reservation);
+
+            var menuItemsToRemove = _context.ReservationMenuItem
+                .Where(rm => rm.Reservation_Id == id);
+
+            var menuItemsToAdd = reservation.ReservationId
+                .Select(mId => new ReservationMenuItem
+                {
+                    Reservation_Id = id,
+                    MenuItem_Id = mId
+                });
+            _context.ReservationMenuItem.AddRange(menuItemsToAdd);
+
+            _context.SaveChanges();
+            return NoContent();
         }
 
         // DELETE api/<ReservationsController>/5
