@@ -131,8 +131,22 @@ namespace ReservationWebApi.Controllers
 
         // DELETE api/<ReservationsController>/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public ActionResult Delete(int id)
         {
+            var reservationFromDb = _context.Reservations
+                .FirstOrDefault(r => r.R_Id == id);
+
+            if (reservationFromDb == null)
+                return NotFound();
+
+            var meniItemsToRemove = _context.ReservationMenuItem
+                .Where(rm => rm.MenuItem_Id == id);
+
+            _context.ReservationMenuItem.RemoveRange(meniItemsToRemove);
+            _context.Reservations.Remove(reservationFromDb);
+            _context.SaveChanges();
+            
+            return NoContent();
         }
     }
 }
